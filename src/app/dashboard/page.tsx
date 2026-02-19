@@ -1,15 +1,7 @@
-"use client";
-
-import { useState } from "react";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { auth } from "@clerk/nextjs/server";
+import { format, parseISO } from "date-fns";
+import { getWorkoutsForUser } from "@/data/workouts";
+import { DatePicker } from "@/components/date-picker";
 import {
   Card,
   CardContent,
@@ -17,45 +9,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
-const mockWorkouts = [
-  {
-    id: 1,
-    name: "Morning Push",
-    date: new Date(),
-    exercises: ["Bench Press", "Overhead Press", "Tricep Dips"],
-  },
-  {
-    id: 2,
-    name: "Upper Body",
-    date: new Date(),
-    exercises: ["Pull-Ups", "Barbell Rows", "Bicep Curls"],
-  },
-];
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
+  const { userId } = await auth();
+  const { date: dateParam } = await searchParams;
 
-export default function DashboardPage() {
-  const [date, setDate] = useState<Date>(new Date());
+  const date = dateParam ? parseISO(dateParam) : new Date();
+  const workoutList = await getWorkoutsForUser(userId!, date);
 
   return (
     <main className="max-w-2xl mx-auto px-6 py-8">
       <h1 className="text-2xl font-semibold mb-6">Dashboard</h1>
 
       <div className="mb-8">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="w-60 justify-start gap-2">
-              <CalendarIcon className="size-4" />
-              {format(date, "do MMM yyyy")}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={(d) => d && setDate(d)}
-            />
-          </PopoverContent>
-        </Popover>
+        <DatePicker dateString={format(date, "yyyy-MM-dd")} />
       </div>
 
       <section>
@@ -63,13 +35,13 @@ export default function DashboardPage() {
           Workouts on {format(date, "do MMM yyyy")}
         </h2>
 
-        {mockWorkouts.length === 0 ? (
+        {workoutList.length === 0 ? (
           <p className="text-muted-foreground text-sm">
             No workouts logged for this date.
           </p>
         ) : (
           <ul className="flex flex-col gap-4">
-            {mockWorkouts.map((workout) => (
+            {workoutList.map((workout) => (
               <li key={workout.id}>
                 <Card>
                   <CardHeader>
@@ -79,7 +51,22 @@ export default function DashboardPage() {
                       {workout.exercises.length !== 1 ? "s" : ""}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <span>
+                        Started: {format(workout.startedAt, "h:mm a")}
+                      </span>
+                      {workout.completedAt ? (
+                        <>
+                          <span>
+                            Ended: {format(workout.completedAt, "h:mm a")}
+                          </span>
+                          <Badge variant="default">Completed</Badge>
+                        </>
+                      ) : (
+                        <Badge variant="secondary">In Progress</Badge>
+                      )}
+                    </div>
                     <ul className="flex flex-wrap gap-2">
                       {workout.exercises.map((exercise) => (
                         <li
