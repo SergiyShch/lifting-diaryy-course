@@ -34,6 +34,119 @@ const MyButton = ({ children }) => (
 )
 ```
 
+## Forms
+
+**All forms must use the shadcn/ui Form component**, which is built on [react-hook-form](https://react-hook-form.com/) and integrated with Zod for validation.
+
+Never use raw `<form>` elements with manual `useState` for field values. Always use `useForm` + `zodResolver` + the `Form`, `FormField`, `FormItem`, `FormLabel`, `FormControl`, and `FormMessage` components.
+
+Install the component if not present:
+
+```bash
+npx shadcn@latest add form
+```
+
+### Required structure
+
+Every form must:
+
+1. Define a Zod schema with `z.object()`
+2. Call `useForm` with `zodResolver(schema)` and `defaultValues`
+3. Wrap the `<form>` element in `<Form {...form}>` (the FormProvider)
+4. Use `<FormField>` with a `render` prop for every field
+5. Use `form.formState.isSubmitting` for the pending state — no separate `useState` for this
+
+### Example
+
+```tsx
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+
+const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+})
+
+type FormValues = z.infer<typeof formSchema>
+
+export function MyForm() {
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { name: "" },
+  })
+
+  async function onSubmit(values: FormValues) {
+    await saveAction(values)
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter a name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" disabled={form.formState.isSubmitting}>
+          {form.formState.isSubmitting ? "Saving…" : "Save"}
+        </Button>
+      </form>
+    </Form>
+  )
+}
+```
+
+### Custom controls (e.g. date picker)
+
+For non-input controls like a calendar, wrap the trigger in `<FormControl>` inside the `render` prop and call `field.onChange` manually:
+
+```tsx
+<FormField
+  control={form.control}
+  name="startedAt"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Date</FormLabel>
+      <Popover>
+        <PopoverTrigger asChild>
+          <FormControl>
+            <Button variant="outline">
+              {format(field.value, "do MMM yyyy")}
+            </Button>
+          </FormControl>
+        </PopoverTrigger>
+        <PopoverContent>
+          <Calendar
+            mode="single"
+            selected={field.value}
+            onSelect={(d) => { if (d) field.onChange(d) }}
+          />
+        </PopoverContent>
+      </Popover>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+```
+
 ## Date Formatting
 
 All dates must be formatted using **date-fns**. Do not use `Date.toLocaleDateString()`, `Intl.DateTimeFormat`, or any other date formatting approach.

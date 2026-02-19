@@ -1,13 +1,22 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import {
   Popover,
   PopoverContent,
@@ -15,65 +24,88 @@ import {
 } from "@/components/ui/popover";
 import { createWorkoutAction } from "./actions";
 
+const formSchema = z.object({
+  name: z.string().min(1, "Workout name is required"),
+  startedAt: z.date(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
 export function NewWorkoutForm() {
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [date, setDate] = useState<Date>(new Date());
-  const [pending, setPending] = useState(false);
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      startedAt: new Date(),
+    },
+  });
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setPending(true);
-    await createWorkoutAction({ name, startedAt: date });
+  async function onSubmit(values: FormValues) {
+    await createWorkoutAction({ name: values.name, startedAt: values.startedAt });
     router.push("/dashboard");
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="name">Workout name</Label>
-        <Input
-          id="name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Push day"
-          required
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Workout name</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. Push day" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      <div className="flex flex-col gap-2">
-        <Label>Date</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="w-60 justify-start gap-2">
-              <CalendarIcon className="size-4" />
-              {format(date, "do MMM yyyy")}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={(d) => {
-                if (d) setDate(d);
-              }}
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
+        <FormField
+          control={form.control}
+          name="startedAt"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Date</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button variant="outline" className="w-60 justify-start gap-2">
+                      <CalendarIcon className="size-4" />
+                      {format(field.value, "do MMM yyyy")}
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={(d) => {
+                      if (d) field.onChange(d);
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="flex gap-3">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Creating…" : "Create workout"}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.push("/dashboard")}
-        >
-          Cancel
-        </Button>
-      </div>
-    </form>
+        <div className="flex gap-3">
+          <Button type="submit" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? "Creating…" : "Create workout"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.push("/dashboard")}
+          >
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }
