@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { format, parseISO } from "date-fns";
+import Link from "next/link";
 import { getWorkoutsForUser } from "@/data/workouts";
 import { DatePicker } from "@/components/date-picker";
 import {
@@ -43,7 +44,8 @@ export default async function DashboardPage({
           <ul className="flex flex-col gap-4">
             {workoutList.map((workout) => (
               <li key={workout.id}>
-                <Card>
+                <Link href={`/dashboard/workout/${workout.id}`}>
+                <Card className="hover:bg-accent transition-colors">
                   <CardHeader>
                     <CardTitle className="text-base">{workout.name}</CardTitle>
                     <CardDescription>
@@ -79,6 +81,7 @@ export default async function DashboardPage({
                     </ul>
                   </CardContent>
                 </Card>
+                </Link>
               </li>
             ))}
           </ul>
