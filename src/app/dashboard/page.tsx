@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export default async function DashboardPage({
   searchParams,
@@ -25,7 +26,12 @@ export default async function DashboardPage({
 
   return (
     <main className="max-w-2xl mx-auto px-6 py-8">
-      <h1 className="text-2xl font-semibold mb-6">Dashboard</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <Button asChild>
+          <Link href="/dashboard/workout/new">Log New Workout</Link>
+        </Button>
+      </div>
 
       <div className="mb-8">
         <DatePicker dateString={format(date, "yyyy-MM-dd")} />
