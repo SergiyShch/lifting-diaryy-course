@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## IMPORTANT: Docs-First Requirement
+## IMPORTANT: Code Generation Guidelines
 
 **Before generating any code, Claude Code MUST first read and refer to the relevant documentation file(s) in the `/docs` directory.** The `/docs` directory contains project-specific guidance that takes precedence over general knowledge. Always check for an applicable doc before writing or modifying code.
 
@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - /docs/data-fetching.md
 - /docs/data-mutations.md
 - /docs/auth.md
+- /docs/routing.md
 
 ## Commands
 
